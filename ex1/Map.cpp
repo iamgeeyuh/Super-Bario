@@ -1,7 +1,8 @@
 #include "Map.h"
+#include <iostream>
 
-Map::Map(int width, int height, unsigned int *level_data, GLuint texture_id, float tile_size, int tile_count_x, int tile_count_y) : m_width(width), m_height(height),
-    m_level_data(level_data), m_texture_id(texture_id), m_tile_size(tile_size), m_tile_count_x(tile_count_x), m_tile_count_y(tile_count_y)
+Map::Map(int width, int height, unsigned int *level_data, GLuint texture_id, float tile_size, int tile_count_x, int tile_count_y) :
+m_width(width), m_height(height), m_level_data(level_data), m_texture_id(texture_id), m_tile_size(tile_size), m_tile_count_x(tile_count_x), m_tile_count_y(tile_count_y)
 {
     build();
 }
@@ -19,7 +20,7 @@ void Map::build()
             // If the tile number is 0 i.e. not solid, skip to the next one
             if (tile == 0) continue;
             
-            // Otherwise, calculate its UV-coordinates
+            // Otherwise, calculate its UV-coordinated
             float u_coord = (float) (tile % m_tile_count_x) / (float) m_tile_count_x;
             float v_coord = (float) (tile / m_tile_count_x) / (float) m_tile_count_y;
             
@@ -83,7 +84,7 @@ bool Map::is_solid(glm::vec3 position, float *penetration_x, float *penetration_
     // The reason why these are pointers is because we want to reassign values
     // to them in case that we are colliding. That way the object that originally
     // passed them as values will keep track of these distances
-    // tldr: we're passing by reference
+    // inb4: we're passing by reference
     *penetration_x = 0;
     *penetration_y = 0;
     
@@ -100,7 +101,7 @@ bool Map::is_solid(glm::vec3 position, float *penetration_x, float *penetration_
     
     // If the tile index is 0 i.e. an open space, it is not solid
     int tile = m_level_data[tile_y * m_width + tile_x];
-    if (tile == 0) return false;
+    if (tile == 0 || tile == 9 || tile == 10 || tile == 11 || tile == 12 || tile == 16 || tile == 17 || tile == 18 || tile == 19 || tile == 20 || tile == 21|| tile == 22 || tile == 23 || tile == 24) return false;
     
     // And we likely have some overlap
     float tile_center_x = (tile_x  * m_tile_size);
@@ -110,7 +111,7 @@ bool Map::is_solid(glm::vec3 position, float *penetration_x, float *penetration_
     *penetration_x = (m_tile_size / 2) - fabs(position.x - tile_center_x);
     *penetration_y = (m_tile_size / 2) - fabs(position.y - tile_center_y);
     
-    if (tile == 2) remove_bridge();
+    if (tile == 15) reveal_door();
     
     return true;
 }
@@ -123,60 +124,66 @@ int Map::get_tile(glm::vec3 position) {
     return m_level_data[tile_y * m_width + tile_x];
 }
 
-void Map::remove_bridge()
-    {
-        m_vertices.clear();
-        m_texture_coordinates.clear();
+void Map::reveal_door()
+{
+    m_vertices.clear();
+    m_texture_coordinates.clear();
     
-        // Since this is a 2D map, we need a nested for-loop
-        for(int y_coord = 0; y_coord < m_height; y_coord++)
+    // Since this is a 2D map, we need a nested for-loop
+    for(int y_coord = 0; y_coord < m_height; y_coord++)
+    {
+        for(int x_coord = 0; x_coord < m_width; x_coord++)
         {
-            for(int x_coord = 0; x_coord < m_width; x_coord++)
-            {
-                // Get the current tile
-                int tile = m_level_data[y_coord * m_width + x_coord];
-                
-                // If the tile number is 0 i.e. not solid, skip to the next one
-                if (tile == 0 || tile == 1 || tile == 2) {
-                    m_level_data[y_coord * m_width + x_coord] = 0;
-                    continue;
-                }
-                
-                // Otherwise, calculate its UV-coordinates
-                float u_coord = (float) (tile % m_tile_count_x) / (float) m_tile_count_x;
-                float v_coord = (float) (tile / m_tile_count_x) / (float) m_tile_count_y;
-                
-                // And work out their dimensions and posititions
-                float tile_width = 1.0f/ (float)  m_tile_count_x;
-                float tile_height = 1.0f/ (float) m_tile_count_y;
-                
-                float x_offset = -(m_tile_size / 2); // From center of tile
-                float y_offset =  (m_tile_size / 2); // From center of tile
-                
-                // So we can store them inside our std::vectors
-                m_vertices.insert(m_vertices.end(), {
-                    x_offset + (m_tile_size * x_coord),  y_offset +  -m_tile_size * y_coord,
-                    x_offset + (m_tile_size * x_coord),  y_offset + (-m_tile_size * y_coord) - m_tile_size,
-                    x_offset + (m_tile_size * x_coord) + m_tile_size, y_offset + (-m_tile_size * y_coord) - m_tile_size,
-                    x_offset + (m_tile_size * x_coord), y_offset + -m_tile_size * y_coord,
-                    x_offset + (m_tile_size * x_coord) + m_tile_size, y_offset + (-m_tile_size * y_coord) - m_tile_size,
-                    x_offset + (m_tile_size * x_coord) + m_tile_size, y_offset +  -m_tile_size * y_coord
-                });
-                
-                m_texture_coordinates.insert(m_texture_coordinates.end(), {
-                    u_coord, v_coord,
-                    u_coord, v_coord + (tile_height),
-                    u_coord + tile_width, v_coord + (tile_height),
-                    u_coord, v_coord,
-                    u_coord + tile_width, v_coord + (tile_height),
-                    u_coord + tile_width, v_coord
-                });
+            // Get the current tile
+            int tile = m_level_data[y_coord * m_width + x_coord];
+            
+            // If the tile number is 0 i.e. not solid, skip to the next one
+            if (tile == 0 || tile == 9 || tile == 11 || tile == 15) {
+                m_level_data[y_coord * m_width + x_coord] = 0;
+                continue;
+            } else if (tile == 10) {
+                m_level_data[y_coord * m_width + x_coord] = 24;
+                tile = 24;
+            } else if (tile == 12) {
+                m_level_data[y_coord * m_width + x_coord] = 23;
+                tile = 23;
             }
+            
+            // Otherwise, calculate its UV-coordinates
+            float u_coord = (float) (tile % m_tile_count_x) / (float) m_tile_count_x;
+            float v_coord = (float) (tile / m_tile_count_x) / (float) m_tile_count_y;
+            
+            // And work out their dimensions and posititions
+            float tile_width = 1.0f/ (float)  m_tile_count_x;
+            float tile_height = 1.0f/ (float) m_tile_count_y;
+            
+            float x_offset = -(m_tile_size / 2); // From center of tile
+            float y_offset =  (m_tile_size / 2); // From center of tile
+            
+            // So we can store them inside our std::vectors
+            m_vertices.insert(m_vertices.end(), {
+                x_offset + (m_tile_size * x_coord),  y_offset +  -m_tile_size * y_coord,
+                x_offset + (m_tile_size * x_coord),  y_offset + (-m_tile_size * y_coord) - m_tile_size,
+                x_offset + (m_tile_size * x_coord) + m_tile_size, y_offset + (-m_tile_size * y_coord) - m_tile_size,
+                x_offset + (m_tile_size * x_coord), y_offset + -m_tile_size * y_coord,
+                x_offset + (m_tile_size * x_coord) + m_tile_size, y_offset + (-m_tile_size * y_coord) - m_tile_size,
+                x_offset + (m_tile_size * x_coord) + m_tile_size, y_offset +  -m_tile_size * y_coord
+            });
+            
+            m_texture_coordinates.insert(m_texture_coordinates.end(), {
+                u_coord, v_coord,
+                u_coord, v_coord + (tile_height),
+                u_coord + tile_width, v_coord + (tile_height),
+                u_coord, v_coord,
+                u_coord + tile_width, v_coord + (tile_height),
+                u_coord + tile_width, v_coord
+            });
         }
-        
-        // The bounds are dependent on the size of the tiles
-        m_left_bound   = 0 - (m_tile_size / 2);
-        m_right_bound  = (m_tile_size * m_width) - (m_tile_size / 2);
-        m_top_bound    = 0 + (m_tile_size / 2);
-        m_bottom_bound = -(m_tile_size * m_height) + (m_tile_size / 2);
     }
+    
+    // The bounds are dependent on the size of the tiles
+    m_left_bound   = 0 - (m_tile_size / 2);
+    m_right_bound  = (m_tile_size * m_width) - (m_tile_size / 2);
+    m_top_bound    = 0 + (m_tile_size / 2);
+    m_bottom_bound = -(m_tile_size * m_height) + (m_tile_size / 2);
+}

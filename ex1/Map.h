@@ -13,8 +13,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "ShaderProgram.h"
 
-class Map 
-{
+class Map {
 private:
     int m_width;
     int m_height;
@@ -37,15 +36,17 @@ private:
     
 public:
     // Constructor
-    Map(int width, int height, unsigned int *level_data, GLuint texture_id, 
-        float tile_size, int tile_count_x, int tile_count_y);
+    Map(int width, int height, unsigned int *level_data, GLuint texture_id, float tile_size, int
+    tile_count_x, int tile_count_y);
     
     // Methods
     void build();
     void render(ShaderProgram *program);
     bool is_solid(glm::vec3 position, float *penetration_x, float *penetration_y);
-    int get_tile(glm::vec3 position);
-    void remove_bridge();
+    int  get_tile(glm::vec3 position);
+    void reveal_door();
+    bool touching_key(glm::vec3 position) { return get_tile(position) == 15; }
+    bool touching_door(glm::vec3 position) { return get_tile(position) == 23 || get_tile(position) == 24; }
     
     // Getters
     int const get_width()  const  { return m_width;  }
